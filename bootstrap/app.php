@@ -29,9 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
             InitializeTenancyByDomain::class,
             InitializeTenancyByRequestData::class,
         ]);
+
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*') || $request->is('admin/*') || $request->expectsJson(),
         );
     })->create();

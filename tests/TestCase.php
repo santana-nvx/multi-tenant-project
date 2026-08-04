@@ -2,14 +2,15 @@
 
 namespace Tests;
 
+use App\Models\Admin;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Tenancy;
 
 abstract class TestCase extends BaseTestCase
 {
-
     protected function createTenant(?string $domain = null): Tenant
     {
         $tenant = Tenant::create();
@@ -30,9 +31,18 @@ abstract class TestCase extends BaseTestCase
         return [$tenant, $user];
     }
 
+    protected function createTenantWithAdmin(array $adminAttributes = [], ?string $domain = null): array
+    {
+        $tenant = $this->createTenant($domain);
+
+        $admin = $tenant->run(fn () => Admin::factory()->create($adminAttributes));
+
+        return [$tenant, $admin];
+    }
+
     protected function tearDown(): void
     {
-        if (app()->bound(\Stancl\Tenancy\Tenancy::class) && tenancy()->initialized) {
+        if (app()->bound(Tenancy::class) && tenancy()->initialized) {
             tenancy()->end();
         }
 

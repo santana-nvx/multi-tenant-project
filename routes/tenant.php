@@ -28,8 +28,16 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 //     });
 // });
 
+Route::middleware('tenant')->prefix('api')->group(base_path('routes/api.php'));
+
+Route::middleware('tenant')->prefix('admin')->group(base_path('routes/admin.php'));
+
 Route::middleware(['web', 'tenant'])->group(function () {
     Route::get('/tenant-check', function () {
         return response()->json(['tenant_id' => tenant('id')]);
     });
+
+    Route::inertia('/api/login', 'PlayerLogin');
+
+    Route::inertia('/admin/login', 'AdminLogin');
 });
