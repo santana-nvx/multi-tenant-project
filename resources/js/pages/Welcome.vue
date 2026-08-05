@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { dashboard, login } from '@/routes';
-/* @chisel-registration */
-import { register } from '@/routes';
-/* @end-chisel-registration */
+import { Head } from '@inertiajs/vue3';
+// import { Link } from '@inertiajs/vue3';
+// import { dashboard, login } from '@/routes';
+// import { register } from '@/routes';
 </script>
 
 <template>
@@ -18,6 +17,7 @@ import { register } from '@/routes';
             class="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl"
         >
             <nav class="flex items-center justify-end gap-4">
+                <!--
                 <Link
                     v-if="$page.props.auth.user"
                     :href="dashboard()"
@@ -32,15 +32,14 @@ import { register } from '@/routes';
                     >
                         Log in
                     </Link>
-                    <!-- @chisel-registration -->
                     <Link
                         :href="register()"
                         class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                     >
                         Register
                     </Link>
-                    <!-- @end-chisel-registration -->
                 </template>
+                -->
             </nav>
         </header>
         <div

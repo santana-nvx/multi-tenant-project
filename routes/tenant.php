@@ -40,4 +40,12 @@ Route::middleware(['web', 'tenant'])->group(function () {
     Route::inertia('/api/login', 'PlayerLogin');
 
     Route::inertia('/admin/login', 'AdminLogin');
+
+    Route::inertia('/api/wallet', 'WalletPage');
+
+    Route::inertia('/api/wallet/deposit', 'DepositPage');
+
+    Route::inertia('/api/wallet/withdraw', 'WithdrawPage');
+
+    Route::inertia('/api/wallet/transactions', 'TransactionsPage');
 });
