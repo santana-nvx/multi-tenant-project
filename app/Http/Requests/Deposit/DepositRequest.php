@@ -27,7 +27,7 @@ class DepositRequest extends FormRequest
             'currency' => ['required', 'string', 'size:3'],
             'pay_method' => ['required', 'string', 'in:online_banking,duitnowqr'],
             'bank_id' => ['required', 'string'],
-            'phone_number' => ['required', 'string'],
+            'phone_number' => ['required', 'string', 'digits_between:10,15'],
         ];
     }
 }

@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(fn () => null);
+
+        // ngrok required
+        $middleware->trustProxies(at: [], headers: 0);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

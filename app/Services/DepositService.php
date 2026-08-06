@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\DTOs\Gateway\DepositRequestData;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
-use App\DTOs\Gateway\DepositRequestData;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Gateway\Contracts\PaymentGatewayInterface;
@@ -66,10 +66,10 @@ class DepositService
             orderId: $transaction->order_id,
             email: $user->email,
             phoneNumber: $phoneNumber,
-            redirectUrl: config('gateway.deposit_redirect_url'),
+            redirectUrl: url('/wallet'),
             payMethod: $payMethod,
             bankId: $bankId,
-            callbackUrl: config('gateway.deposit_callback_url'),
+            callbackUrl: config('gateway.deposit_callback_url').'/api/deposits/callback?tenant='.tenant('id'),
         ));
 
         if (! $order->succeeded()) {

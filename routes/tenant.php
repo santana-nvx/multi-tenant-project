@@ -41,11 +41,11 @@ Route::middleware(['web', 'tenant'])->group(function () {
 
     Route::inertia('/admin/login', 'AdminLogin');
 
-    Route::inertia('/api/wallet', 'WalletPage');
+    Route::inertia('/wallet', 'WalletPage');
 
-    Route::inertia('/api/wallet/deposit', 'DepositPage');
+    Route::inertia('/wallet/deposit', 'DepositPage');
 
-    Route::inertia('/api/wallet/withdraw', 'WithdrawPage');
+    Route::inertia('/wallet/withdraw', 'WithdrawPage');
 
-    Route::inertia('/api/wallet/transactions', 'TransactionsPage');
+    Route::inertia('/wallet/transactions', 'TransactionsPage');
 });

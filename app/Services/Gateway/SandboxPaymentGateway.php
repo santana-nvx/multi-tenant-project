@@ -7,6 +7,8 @@ use App\DTOs\Gateway\CurrencyLimit;
 use App\DTOs\Gateway\DepositOrderResult;
 use App\DTOs\Gateway\DepositRequestData;
 use App\DTOs\Gateway\GatewayAuthResult;
+use App\DTOs\Gateway\WithdrawalOrderResult;
+use App\DTOs\Gateway\WithdrawalRequestData;
 use App\Models\GatewaySetting;
 use App\Services\Gateway\Contracts\PaymentGatewayInterface;
 use Illuminate\Support\Facades\Http;
@@ -22,7 +24,7 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
     {
         $response = Http::baseUrl($this->settings->base_url)
             ->asMultipart()
-            ->post('/merchant/auth', [
+            ->post(config('onepay.endpoints.auth'), [
                 ['name' => 'username', 'contents' => $this->settings->username],
                 ['name' => 'api_key', 'contents' => $this->settings->api_key],
             ]);
@@ -35,7 +37,7 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
 
         $response = Http::baseUrl($this->settings->base_url)
             ->asMultipart()
-            ->post('/merchant/currency', [
+            ->post(config('onepay.endpoints.currency'), [
                 ['name' => 'username', 'contents' => $this->settings->username],
 
             ]);
@@ -55,7 +57,7 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
     {
         $response = Http::baseUrl($this->settings->base_url)
             ->asMultipart()
-            ->post('/wallet/bank_list', [
+            ->post(config('onepay.endpoints.deposit_banks'), [
                 ['name' => 'username', 'contents' => $this->settings->username],
                 ['name' => 'currency', 'contents' => $currency],
             ]);
@@ -76,7 +78,7 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
     {
         $response = Http::baseUrl($this->settings->base_url)
             ->asMultipart()
-            ->post('/merchant/generate_orders', [
+            ->post(config('onepay.endpoints.create_deposit'), [
                 ['name' => 'username', 'contents' => $this->settings->username],
                 ['name' => 'auth', 'contents' => $auth->auth],
                 ['name' => 'amount', 'contents' => $data->amount],
@@ -91,5 +93,23 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
             ]);
 
         return DepositOrderResult::fromResponse($response->json() ?? []);
+    }
+
+    public function createWithdrawal(GatewayAuthResult $auth, WithdrawalRequestData $data): WithdrawalOrderResult
+    {
+        $response = Http::baseUrl($this->settings->base_url)
+            ->asMultipart()
+            ->post(config('onepay.endpoints.create_withdrawal'), [
+                ['name' => 'auth', 'contents' => $auth->auth],
+                ['name' => 'amount', 'contents' => $data->amount],
+                ['name' => 'currency', 'contents' => $data->currency],
+                ['name' => 'orderid', 'contents' => $data->orderId],
+                ['name' => 'bank_id', 'contents' => $data->bankId],
+                ['name' => 'holder_name', 'contents' => $data->holderName],
+                ['name' => 'account_no', 'contents' => $data->accountNo],
+                ['name' => 'callback_url', 'contents' => $data->callbackUrl ?? ''],
+            ]);
+
+        return WithdrawalOrderResult::fromResponse($response->json() ?? []);
     }
 }

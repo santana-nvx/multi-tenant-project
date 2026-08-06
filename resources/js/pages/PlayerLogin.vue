@@ -70,7 +70,7 @@ function logout() {
 }
 
 function goToWallet() {
-    router.visit('/api/wallet');
+    router.visit('/wallet');
 }
 </script>
 

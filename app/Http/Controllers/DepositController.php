@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\DepositService;
 use App\Http\Requests\Deposit\DepositRequest;
+use App\Services\DepositService;
 use RuntimeException;
 
 class DepositController extends Controller
