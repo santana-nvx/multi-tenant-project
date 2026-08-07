@@ -1,0 +1,129 @@
+DEPOSIT FLOW — START TO END
+============================
+
+PART 1 — PLAYER INITIATES DEPOSIT
+----------------------------------
+
+ [Player's Browser]
+  DepositPage.vue
+        |  POST /api/deposits  { amount, currency, bank_id, phone_number }
+        v
+ +--------------------+
+ |  routes/tenant.php  |  <- resolves WHICH tenant DB this request belongs to
+ +---------+----------+
+           v
+ +--------------------+
+ |   routes/api.php    |  <- auth:api middleware checks the JWT token
+ +---------+----------+ 
+           v
+ +--------------------+
+ |  DepositRequest      |  <- validates shape (amount numeric? currency 3 chars?)
+ |  (Form Request)      |     bad input stops HERE, controller never runs
+ +---------+----------+
+           | valid
+           v
+ +--------------------+
+ |  DepositController   |  <- thin: pulls validated data, calls the service
+ +---------+----------+
+           v
+ +-----------------------------------------------------------+
+ |  DepositService::startDeposit()                            |
+ |                                                              |
+ |   1. checkAmountIsAllowed()  -----+                         |
+ |   2. get-or-create Wallet         |  (calls gateway,        |
+ |   3. create Transaction (pending) |   see Part 1b)          |
+ |   4. gateway->auth()          <---+                         |
+ |   5. gateway->createDeposit()                               |
+ |   6. update Transaction -> processing                       |
+ +---------+----------------------------+--------------------+
+           |                            |
+           v                            v
+ +------------------+       PART 1b — TALKING TO THE GATEWAY
+ | PaymentGateway     |
+ | Interface           |
+ | (just a promise)    |
+ +---------+----------+
+           | resolved via AppServiceProvider binding
+           v
+ +----------------------+        +-----------------------+
+ | SandboxPaymentGateway  |------->|  DepositRequestData    |  (DTO out)
+ |  ->auth()               |       +-----------------------+
+ |  ->createDeposit()       |               |
+ +---------+----------+               v
+           |  real multipart/form-data POST
+           v
+ +--------------------+
+ |   REAL GATEWAY       |  (staging-api.one1pay.asia)
+ |   /merchant/auth      |
+ |   /merchant/generate_orders |
+ +---------+----------+
+           |  raw JSON response
+           v
+ +--------------------+
+ |  DepositOrderResult   |  (DTO in - p_url, payment_id)
+ +---------+----------+
+           |
+           v (back up the chain to DepositService)
+ +--------------------+
+ |  JSON response        |  { transaction_id, order_id, payment_url }
+ +---------+----------+
+           v
+ [Player's Browser]
+  "Go to payment page" -> opens payment_url
+  Transaction is only "processing" here - NOT confirmed yet
+
+
+PART 2 — PLAYER PAYS, GATEWAY CONFIRMS (separate request, later)
+-------------------------------------------------------------------
+
+ [Player pays on gateway's own page]
+           |
+           v
+ [Gateway's server]
+        |  POST callback_url  { order_id, order_status, token, ... }
+        v
+ +--------------------+
+ | DepositCallback       |  (public route - no auth:api, gateway isn't a player)
+ | Controller             |
+ +---------+----------+
+           v
+ +-----------------------------------------------------------+
+ |  DepositCallbackService::handle()                          |
+ |                                                              |
+ |   1. GatewayCallbackChecker -> verify MD5 signature          |
+ |      fake?  ->  422, stop here                               |
+ |   2. find Transaction by order_id                           |
+ |   3. already processed_at?  ->  no-op (idempotency)          |
+ |   4. order_status === completed ?                            |
+ |        YES -> lockForUpdate() Wallet, bcadd() balance,       |
+ |               Transaction -> success                          |
+ |        NO  -> Transaction -> failed                           |
+ +---------+---------------------------------------------------+
+           v
+ +--------------------+
+ |  {"status": true}     |  <- tells the gateway "handled, stop retrying"
+ +--------------------+
+
+
+PART 3 — PLAYER CHECKS THEIR BALANCE
+--------------------------------------
+
+ [Player's Browser]
+  WalletPage.vue
+        |  GET /api/wallet
+        v
+ +--------------------+
+ |  WalletController      |  <- pure read, no service needed
+ +---------+----------+
+           v
+   { balance: "500.00", currency: "MYR" }   <- reflects Part 2's crediting
+
+
+THE ONE RULE THIS WHOLE DIAGRAM FOLLOWS
+------------------------------------------
+Every box only ever talks to the box directly next to it - the controller
+never touches the gateway directly, the driver never touches the database
+directly. Part 1 and Part 2 are TWO COMPLETELY SEPARATE HTTP REQUESTS,
+arriving at different times, from different callers (the player's browser
+vs. the gateway's own server) - that separation is exactly why the money is
+only ever trusted as real in Part 2, never Part 1.

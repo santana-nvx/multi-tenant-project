@@ -21,4 +21,6 @@ interface PaymentGatewayInterface
     public function createDeposit(GatewayAuthResult $auth, DepositRequestData $data): DepositOrderResult;
 
     public function createWithdrawal(GatewayAuthResult $auth, WithdrawalRequestData $data): WithdrawalOrderResult;
+
+    public function withdrawalBanks(string $currency): array;
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\PlayerAuthController;
+use App\Http\Controllers\BankController;
 use App\Http\Controllers\DepositCallbackController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\TransactionController;
@@ -19,7 +20,11 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/me', [PlayerAuthController::class, 'me']);
 
     Route::post('/deposits', [DepositController::class, 'store']);
+    Route::get('/deposits/banks', [BankController::class, 'deposit']);
+
     Route::post('/withdrawals', [WithdrawalController::class, 'store']);
+    Route::get('/withdrawals/banks', [BankController::class, 'withdrawal']);
+
     Route::get('/wallet', [WalletController::class, 'show']);
     Route::get('/transactions', [TransactionController::class, 'index']);
 });

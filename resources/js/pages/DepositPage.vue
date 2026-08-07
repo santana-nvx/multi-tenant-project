@@ -11,15 +11,38 @@ import { useAuthToken } from '@/composables/useAuthToken';
 
 const { get: getToken, authFetch } = useAuthToken();
 
+type Bank = { id: string; name: string; currency: string };
+
 const amount = ref('');
 const currency = ref('MYR');
 const payMethod = ref('online_banking');
 const bankId = ref('');
 const phoneNumber = ref('');
 
+const banks = ref<Bank[]>([]);
+const banksLoading = ref(true);
+const banksError = ref<string | null>(null);
+
 const submitting = ref(false);
 const errorMessage = ref<string | null>(null);
 const paymentUrl = ref<string | null>(null);
+
+async function loadBanks() {
+    banksLoading.value = true;
+    banksError.value = null;
+
+    const response = await authFetch(`/api/deposits/banks?currency=${currency.value}`);
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        banksError.value = 'Could not load bank list.';
+        banksLoading.value = false;
+        return;
+    }
+
+    banks.value = body.data ?? [];
+    banksLoading.value = false;
+}
 
 async function submit() {
     submitting.value = true;
@@ -52,7 +75,10 @@ async function submit() {
 onMounted(() => {
     if (!getToken()) {
         router.visit('/api/login');
+        return;
     }
+
+    loadBanks();
 });
 </script>
 
@@ -76,7 +102,14 @@ onMounted(() => {
 
                     <div class="space-y-2">
                         <Label>Currency</Label>
-                        <Input v-model="currency" maxlength="3" placeholder="MYR" />
+                        <Select v-model="currency">
+                            <SelectTrigger class="w-full">
+                                <SelectValue placeholder="Select a currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="MYR">MYR</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div class="space-y-2">
@@ -93,11 +126,18 @@ onMounted(() => {
                     </div>
 
                     <div class="space-y-2">
-                        <Label>Bank ID</Label>
-                        <Input v-model="bankId" placeholder="e.g. 88" />
-                        <p class="text-xs text-muted-foreground">
-                            Placeholder field &mdash; a real bank picker needs a bank-list endpoint, not yet built.
-                        </p>
+                        <Label>Bank</Label>
+                        <Select v-model="bankId" :disabled="banksLoading || !!banksError">
+                            <SelectTrigger class="w-full">
+                                <SelectValue :placeholder="banksLoading ? 'Loading banks…' : 'Select a bank'" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="bank in banks" :key="bank.id" :value="bank.id">
+                                    {{ bank.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="banksError" class="text-xs text-destructive">{{ banksError }}</p>
                     </div>
 
                     <div class="space-y-2">

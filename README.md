@@ -18,6 +18,14 @@ Onboarding assignment — a multi-tenant wallet platform where each tenant (merc
 
 ---
 
+## A Note on AI Assistance
+
+All Vue/frontend work in this project (pages, components, the wallet UI) was built with AI assistance end-to-end — the assignment itself frames the frontend as a "thin UI" secondary to the backend, so this was a deliberate time allocation, not an oversight.
+
+The backend/PHP logic — tenancy, guards, wallet/transaction models, the driver/DTO pattern, deposit and withdrawal services, callback handling, concurrency locking — was written by hand, with AI used for code review, bug-catching, and architectural discussion rather than authorship. Real bugs it caught along the way (wrong `bccomp()` usage, a route collision, a `lockForUpdate()` outside its transaction, several others) are part of the honest record of how this was built, not something to hide.
+
+---
+
 ## Setup & Run Instructions
 
 ### 1. Clone and install dependencies

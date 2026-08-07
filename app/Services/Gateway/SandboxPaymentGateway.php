@@ -112,4 +112,23 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
 
         return WithdrawalOrderResult::fromResponse($response->json() ?? []);
     }
+
+    public function withdrawalBanks(string $currency): array
+    {
+        $response = Http::baseUrl($this->settings->base_url)
+            ->asMultipart()
+            ->post(config('onepay.endpoints.withdraw_banks'), [
+                ['name' => 'username', 'contents' => $this->settings->username],
+                ['name' => 'currency', 'contents' => $currency],
+            ]);
+
+        $datas = $response->json('data') ?? [];
+
+        $banks = [];
+        foreach ($datas as $data) {
+            $banks[] = Bank::fromResponse($data);
+        }
+
+        return $banks;
+    }
 }
