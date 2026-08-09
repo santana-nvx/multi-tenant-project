@@ -2,7 +2,7 @@
 
 Onboarding assignment — a multi-tenant wallet platform where each tenant (merchant) has its own isolated database, its own players (`User`) and admins (`Admin`), and a wallet/transaction system backed by a real sandbox payment gateway.
 
-**Status:** core functionality complete. Deposit and withdrawal are both built and verified end-to-end against the real staging gateway (including a real callback received through an ngrok tunnel), and the concurrency double-spend proof has been run against real Postgres with a genuinely correct result. Remaining work is polish, not correctness — see [Known Issues](#known-issues--unfinished-work) below.
+**Status:** core assignment complete. Deposit and withdrawal are both built and verified end-to-end against the real staging gateway (including a real callback received through an ngrok tunnel), and the concurrency double-spend proof has been run against real Postgres with a genuinely correct result. Beyond the core requirements, several of the assignment's optional Section 6 bonus items are also built and tested — see [Bonus / Extended Scope](#bonus--extended-scope) below. Remaining work is further optional scope, not core correctness — see [Known Issues](#known-issues--unfinished-work).
 
 ---
 
@@ -188,14 +188,29 @@ This was verified two ways:
 
 ---
 
+## Bonus / Extended Scope
+
+Beyond the core assignment (sections 1–4), several of the assignment's own Section 6 "bonus / stretch goals" are also implemented and tested:
+
+- **Queued callback jobs** — `DepositCallbackController`/`WithdrawalCallbackController` no longer process callbacks synchronously on the request thread. They dispatch `ProcessDepositCallback`/`ProcessWithdrawalCallback` jobs (`QUEUE_CONNECTION=database`) and return `{"status": true}` immediately; the actual signature check/idempotency/crediting logic runs on a queue worker. `QueueTenancyBootstrapper` (already enabled in `config/tenancy.php`) re-resolves the correct tenant DB connection when each job runs, so this works correctly across tenants. **Requires a worker running** (`php artisan queue:work`) for callbacks to actually process — see Known Issues.
+- **Reconciliation** — `php artisan app:check-transaction-status` finds transactions stuck in `pending`/`processing` for more than 15 minutes (across all tenants), asks the gateway directly for their real status (`checkDepositStatus()`/`checkWithdrawalStatus()`, the `check_status`/`check_withdraw_status` endpoints), and resolves them. Rather than duplicating the crediting/refund logic a third time, it builds a self-signed synthetic callback payload (`token = md5(api_secret + order_id)` — the exact formula `GatewayCallbackChecker` already verifies) and feeds it through the *same* `DepositCallbackService`/`WithdrawalCallbackService` real callbacks use. Not yet wired to Laravel's scheduler for automatic periodic runs — currently a manual/on-demand command.
+- **Rate limiting on withdrawals** — `throttle:5,1` (5 requests/minute) on `POST /api/withdrawals`. Verified live: a 6th rapid request correctly returns `429`.
+- **Self-service registration** — `POST /api/register` (`RegisterRequest`, `PlayerAuthController::register()`) creates a player and logs them in immediately via `auth('api')->login($user)` (no redundant credential re-check, since the user was just created). Frontend page at `/api/register`, linked from the login page.
+- **Transaction filtering** — `GET /api/transactions` accepts `type`, `status`, `date_from`, `date_to` query params, applied conditionally. Frontend: dropdowns + date range pickers + Apply/Clear buttons on the transactions page.
+- **Live bank lists, both directions** — `depositBanks()`/`withdrawalBanks()` on the driver, exposed via `BankController` (`GET /api/deposits/banks`, `GET /api/withdrawals/banks`), both verified against the real gateway (8 real deposit banks, 50 real withdrawal banks/e-wallets). Frontend dropdowns replace what were originally manual "type in a bank ID" fields on both the deposit and withdrawal forms.
+
+**Not attempted**: Section 11 (the extended central/tenant back-office scope, `spatie/laravel-permission` role model, full CRUD back offices). `spatie/laravel-permission` is installed and its migrations are in place in both central and tenant paths as groundwork, but the actual central-admin guard/model/controller/role-seeding work was not completed in the time available. A detailed implementation plan exists (not included in this repo) if this is picked up later — the honest reason it wasn't finished is time, not that it was judged unimportant; the assignment's own rubric explicitly rewards a smaller, correct scope over a wider, rushed one, which is the trade-off made here.
+
+---
+
 ## Known Issues / Unfinished Work
 
 Being upfront about what's not done rather than papering over it:
 
 - **The real gateway currently rejects `createWithdrawal()` with `"invalid ip address"`.** Confirmed this is not a bug in this codebase — `auth()` against the same gateway succeeds fine, and the request/response shape matches the gateway's own documented API exactly. This looks like an IP-allowlist restriction on the sandbox account, specific to the `withdraw_orders` endpoint (withdrawal endpoints commonly have stricter security than deposit ones, since they move money out). **What's still been proven despite this**: the failure-handling path itself is correct — a controlled test showed the wallet balance is identical before and after a real gateway-rejected withdrawal (money held, gateway rejected it, money correctly refunded, zero drift). Needs the account's IP allowlist updated by whoever issued the sandbox credentials; not fixable from application code.
-- **Automated Pest test for deposit money logic doesn't exist yet.** Withdrawal has one (`WithdrawalConcurrencyTest.php`, covering both the balance-lock logic and the double-spend concurrency proof). Deposit's entire flow has been verified **manually** — real staging gateway calls via the UI, and a real callback received through ngrok — but not yet turned into an automated `Http::fake()`-based test.
-- **The bank-list gateway endpoint (`depositBanks()`) is built on the driver but has no controller/route yet** — the deposit UI currently has a manual "type in a bank ID" field instead of a real dropdown populated from the gateway.
-- **Laravel Pint has not yet been run for a final clean pass.**
+- **Queued callbacks need a worker running.** Since deposit/withdrawal callbacks are now processed via queued jobs (see Bonus scope above), `php artisan queue:work` must be running for them to actually resolve — otherwise they sit in the `jobs` table unprocessed. Not an issue for the core, synchronous parts of the app (initiation, reads), only for callback resolution.
+- **Reconciliation isn't scheduled yet** — `app:check-transaction-status` exists and is tested, but isn't wired into Laravel's task scheduler for automatic periodic runs; it's currently a manual/on-demand command.
+- **Section 11 (extended back-office scope) was not attempted** — see Bonus scope above for the honest reasoning.
 
 ---
 
@@ -205,7 +220,7 @@ Being upfront about what's not done rather than papering over it:
 vendor/bin/pest
 ```
 
-Currently green (12 tests, 30 assertions): tenant isolation, all 4 auth-guard cases, and the withdrawal concurrency/locking proof. Deposit's automated test is the next one to be written (see above) — its correctness is currently established manually rather than by an automated test.
+Currently green (21 tests, 63 assertions): tenant isolation, all 4 auth-guard cases, deposit money logic (6 cases), withdrawal concurrency/locking proof, and reconciliation (3 cases covering resolved-deposit, refunded-withdrawal, and untouched-if-not-stale-yet).
 
 **Concurrency proof — manual verification against real Postgres** (the Pest test above proves the logic sequentially; this proves genuine simultaneous-request behavior, which SQLite's test database can't demonstrate):
 ```bash

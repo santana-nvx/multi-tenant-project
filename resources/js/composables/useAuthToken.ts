@@ -1,16 +1,17 @@
-const STORAGE_KEY = 'player_token';
-
-export function useAuthToken() {
+export function useAuthToken(
+    storageKey: string = 'player_token',
+    loginPath: string = '/api/login',
+) {
     function get(): string | null {
-        return localStorage.getItem(STORAGE_KEY);
+        return localStorage.getItem(storageKey);
     }
 
     function set(token: string): void {
-        localStorage.setItem(STORAGE_KEY, token);
+        localStorage.setItem(storageKey, token);
     }
 
     function clear(): void {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(storageKey);
     }
 
     function authHeaders(): Record<string, string> {
@@ -38,7 +39,7 @@ export function useAuthToken() {
 
         if (response.status === 401) {
             clear();
-            window.location.href = '/api/login';
+            window.location.href = loginPath;
 
             // Never resolves — we're navigating away, so nothing downstream should try to read this response.
             return new Promise(() => {});

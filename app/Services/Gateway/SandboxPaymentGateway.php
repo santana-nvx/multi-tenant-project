@@ -7,6 +7,7 @@ use App\DTOs\Gateway\CurrencyLimit;
 use App\DTOs\Gateway\DepositOrderResult;
 use App\DTOs\Gateway\DepositRequestData;
 use App\DTOs\Gateway\GatewayAuthResult;
+use App\DTOs\Gateway\MerchantBalanceResult;
 use App\DTOs\Gateway\WithdrawalOrderResult;
 use App\DTOs\Gateway\WithdrawalRequestData;
 use App\Models\GatewaySetting;
@@ -30,6 +31,19 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
             ]);
 
         return GatewayAuthResult::fromResponse($response->json() ?? []);
+    }
+
+    public function balance(GatewayAuthResult $auth): MerchantBalanceResult
+    {
+        $response = Http::baseUrl($this->settings->base_url)
+            ->asMultipart()
+            ->post(config('onepay.endpoints.balance'), [
+                ['name' => 'username', 'contents' => $this->settings->username],
+                ['name' => 'auth', 'contents' => $auth->auth],
+                ['name' => 'currency', 'contents' => 'MYR'],
+            ]);
+
+        return MerchantBalanceResult::fromResponse($response->json() ?? []);
     }
 
     public function currencyLimits(): array
@@ -95,6 +109,19 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
         return DepositOrderResult::fromResponse($response->json() ?? []);
     }
 
+    public function checkDepositStatus(string $orderId): string
+    {
+        $response = Http::baseUrl($this->settings->base_url)
+            ->asMultipart()
+            ->post(config('onepay.endpoints.check_deposit_status'), [
+                ['name' => 'username', 'contents' => $this->settings->username],
+                ['name' => 'id', 'contents' => $orderId],
+            ]);
+
+        return $response->json('order_status') ?? 'Something Went Wrong';
+
+    }
+
     public function createWithdrawal(GatewayAuthResult $auth, WithdrawalRequestData $data): WithdrawalOrderResult
     {
         $response = Http::baseUrl($this->settings->base_url)
@@ -130,5 +157,18 @@ class SandboxPaymentGateway implements PaymentGatewayInterface
         }
 
         return $banks;
+    }
+
+    public function checkWithdrawalStatus(string $orderId): string
+    {
+        $response = Http::baseUrl($this->settings->base_url)
+            ->asMultipart()
+            ->post(config('onepay.endpoints.check_withdrawal_status'), [
+                ['name' => 'username', 'contents' => $this->settings->username],
+                ['name' => 'id', 'contents' => $orderId],
+            ]);
+
+        return $response->json('order_status') ?? 'Something Went Wrong';
+
     }
 }

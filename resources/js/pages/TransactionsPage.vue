@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,9 @@ import {
     CardTitle,
     CardDescription,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import WalletNav from '@/components/WalletNav.vue';
 import { useAuthToken } from '@/composables/useAuthToken';
 
@@ -31,6 +34,11 @@ const lastPage = ref(1);
 const loading = ref(true);
 const errorMessage = ref<string | null>(null);
 
+const filterType = ref('all');
+const filterStatus = ref('all');
+const filterDateFrom = ref('');
+const filterDateTo = ref('');
+
 function statusVariant(status: Transaction['status']) {
     if (status === 'success') {
         return 'default';
@@ -47,7 +55,25 @@ async function load(page: number) {
     loading.value = true;
     errorMessage.value = null;
 
-    const response = await authFetch(`/api/transactions?page=${page}`);
+    const params = new URLSearchParams({ page: String(page) });
+
+    if (filterType.value !== 'all') {
+        params.set('type', filterType.value);
+    }
+
+    if (filterStatus.value !== 'all') {
+        params.set('status', filterStatus.value);
+    }
+
+    if (filterDateFrom.value) {
+        params.set('date_from', filterDateFrom.value);
+    }
+
+    if (filterDateTo.value) {
+        params.set('date_to', filterDateTo.value);
+    }
+
+    const response = await authFetch(`/api/transactions?${params.toString()}`);
 
     if (!response.ok) {
         errorMessage.value = `Could not load transactions (${response.status}). Backend endpoint may not exist yet.`;
@@ -58,12 +84,22 @@ async function load(page: number) {
 
     const body = await response.json();
     transactions.value = body.data ?? [];
-    currentPage.value = body.meta?.current_page ?? 1;
-    lastPage.value = body.meta?.last_page ?? 1;
+    currentPage.value = body.current_page ?? 1;
+    lastPage.value = body.last_page ?? 1;
     loading.value = false;
 }
 
-watch(currentPage, (page) => load(page));
+function applyFilters() {
+    load(1);
+}
+
+function clearFilters() {
+    filterType.value = 'all';
+    filterStatus.value = 'all';
+    filterDateFrom.value = '';
+    filterDateTo.value = '';
+    load(1);
+}
 
 onMounted(() => {
     if (!getToken()) {
@@ -92,6 +128,62 @@ onMounted(() => {
                 >
             </CardHeader>
             <CardContent>
+                <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div class="space-y-1">
+                        <Label class="text-xs">Type</Label>
+                        <Select v-model="filterType">
+                            <SelectTrigger class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="deposit">Deposit</SelectItem>
+                                <SelectItem value="withdrawal">Withdrawal</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <Label class="text-xs">Status</Label>
+                        <Select v-model="filterStatus">
+                            <SelectTrigger class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="processing">Processing</SelectItem>
+                                <SelectItem value="success">Success</SelectItem>
+                                <SelectItem value="failed">Failed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <Label class="text-xs">From</Label>
+                        <Input
+                            v-model="filterDateFrom"
+                            type="date"
+                            @click="($event.target as HTMLInputElement).showPicker?.()"
+                        />
+                    </div>
+
+                    <div class="space-y-1">
+                        <Label class="text-xs">To</Label>
+                        <Input
+                            v-model="filterDateTo"
+                            type="date"
+                            @click="($event.target as HTMLInputElement).showPicker?.()"
+                        />
+                    </div>
+                </div>
+
+                <div class="mb-4 flex gap-2">
+                    <Button size="sm" @click="applyFilters">Apply filters</Button>
+                    <Button size="sm" variant="outline" @click="clearFilters">Clear</Button>
+                </div>
+
                 <p v-if="loading" class="text-sm text-muted-foreground">
                     Loading…
                 </p>
@@ -155,7 +247,7 @@ onMounted(() => {
                         variant="outline"
                         size="sm"
                         :disabled="currentPage <= 1"
-                        @click="currentPage > 1 && (currentPage -= 1)"
+                        @click="currentPage > 1 && load(currentPage - 1)"
                     >
                         Previous
                     </Button>
@@ -166,7 +258,7 @@ onMounted(() => {
                         variant="outline"
                         size="sm"
                         :disabled="currentPage >= lastPage"
-                        @click="currentPage < lastPage && (currentPage += 1)"
+                        @click="currentPage < lastPage && load(currentPage + 1)"
                     >
                         Next
                     </Button>

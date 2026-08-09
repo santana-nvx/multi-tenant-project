@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,9 @@ import {
     CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useAuthToken } from '@/composables/useAuthToken';
+
+const { set: setToken } = useAuthToken('admin_token', '/admin/login');
 
 const email = ref('');
 const password = ref('');
@@ -47,6 +50,11 @@ async function login() {
     }
 
     token.value = body.access_token;
+    setToken(body.access_token);
+}
+
+function goToDashboard() {
+    router.visit('/admin/dashboard');
 }
 
 async function callMe(guard: 'api' | 'admin') {
@@ -146,6 +154,10 @@ function logout() {
                             Call /admin/me
                         </Button>
                     </div>
+
+                    <Button class="w-full" @click="goToDashboard"
+                        >Go to dashboard</Button
+                    >
 
                     <div v-if="meResult" class="rounded-md border p-3 text-sm">
                         <p class="font-medium">

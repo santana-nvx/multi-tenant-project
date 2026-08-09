@@ -6,12 +6,15 @@ use App\DTOs\Gateway\CurrencyLimit;
 use App\DTOs\Gateway\DepositOrderResult;
 use App\DTOs\Gateway\DepositRequestData;
 use App\DTOs\Gateway\GatewayAuthResult;
+use App\DTOs\Gateway\MerchantBalanceResult;
 use App\DTOs\Gateway\WithdrawalOrderResult;
 use App\DTOs\Gateway\WithdrawalRequestData;
 
 interface PaymentGatewayInterface
 {
     public function auth(): GatewayAuthResult;
+
+    public function balance(GatewayAuthResult $auth): MerchantBalanceResult;
 
     /** @return array<int, CurrencyLimit> */
     public function currencyLimits(): array;
@@ -20,7 +23,11 @@ interface PaymentGatewayInterface
 
     public function createDeposit(GatewayAuthResult $auth, DepositRequestData $data): DepositOrderResult;
 
+    public function checkDepositStatus(string $orderId): string;
+
     public function createWithdrawal(GatewayAuthResult $auth, WithdrawalRequestData $data): WithdrawalOrderResult;
 
     public function withdrawalBanks(string $currency): array;
+
+    public function checkWithdrawalStatus(string $orderId): string;
 }

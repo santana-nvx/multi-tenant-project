@@ -42,6 +42,8 @@ Route::middleware(['web', 'tenant'])->group(function () {
 
     Route::inertia('/admin/login', 'AdminLogin');
 
+    Route::inertia('/admin/dashboard', 'AdminDashboard');
+
     Route::inertia('/wallet', 'WalletPage');
 
     Route::inertia('/wallet/deposit', 'DepositPage');
