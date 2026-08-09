@@ -2,10 +2,22 @@
 import { Head, router } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import WalletNav from '@/components/WalletNav.vue';
 import { useAuthToken } from '@/composables/useAuthToken';
 
@@ -31,12 +43,15 @@ async function loadBanks() {
     banksLoading.value = true;
     banksError.value = null;
 
-    const response = await authFetch(`/api/withdrawals/banks?currency=${currency.value}`);
+    const response = await authFetch(
+        `/api/withdrawals/banks?currency=${currency.value}`,
+    );
     const body = await response.json().catch(() => null);
 
     if (!response.ok) {
         banksError.value = 'Could not load bank list.';
         banksLoading.value = false;
+
         return;
     }
 
@@ -65,11 +80,15 @@ async function submit() {
     submitting.value = false;
 
     if (!response.ok) {
-        errorMessage.value = body?.message ?? `Withdrawal failed (${response.status}). Backend endpoint may not exist yet.`;
+        errorMessage.value =
+            body?.message ??
+            `Withdrawal failed (${response.status}). Backend endpoint may not exist yet.`;
+
         return;
     }
 
-    successMessage.value = 'Withdrawal requested — funds are held and pending gateway confirmation.';
+    successMessage.value =
+        'Withdrawal requested — funds are held and pending gateway confirmation.';
     amount.value = '';
     bankId.value = '';
     holderName.value = '';
@@ -79,6 +98,7 @@ async function submit() {
 onMounted(() => {
     if (!getToken()) {
         router.visit('/api/login');
+
         return;
     }
 
@@ -89,18 +109,29 @@ onMounted(() => {
 <template>
     <Head title="Withdraw" />
 
-    <div class="mx-auto min-h-screen max-w-2xl bg-[#FDFDFC] p-6 dark:bg-[#0a0a0a]">
+    <div
+        class="mx-auto min-h-screen max-w-2xl bg-[#FDFDFC] p-6 dark:bg-[#0a0a0a]"
+    >
         <WalletNav active="withdraw" />
 
         <Card>
             <CardHeader>
                 <CardTitle>Withdraw</CardTitle>
-                <CardDescription>POST /api/withdrawals &mdash; funds are held from your balance immediately.</CardDescription>
+                <CardDescription
+                    >POST /api/withdrawals &mdash; funds are held from your
+                    balance immediately.</CardDescription
+                >
             </CardHeader>
             <CardContent class="space-y-4">
                 <div class="space-y-2">
                     <Label>Amount</Label>
-                    <Input v-model="amount" type="number" step="0.01" min="0" placeholder="100.00" />
+                    <Input
+                        v-model="amount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="100.00"
+                    />
                 </div>
 
                 <div class="space-y-2">
@@ -117,17 +148,32 @@ onMounted(() => {
 
                 <div class="space-y-2">
                     <Label>Bank</Label>
-                    <Select v-model="bankId" :disabled="banksLoading || !!banksError">
+                    <Select
+                        v-model="bankId"
+                        :disabled="banksLoading || !!banksError"
+                    >
                         <SelectTrigger class="w-full">
-                            <SelectValue :placeholder="banksLoading ? 'Loading banks…' : 'Select a bank'" />
+                            <SelectValue
+                                :placeholder="
+                                    banksLoading
+                                        ? 'Loading banks…'
+                                        : 'Select a bank'
+                                "
+                            />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem v-for="bank in banks" :key="bank.id" :value="bank.id">
+                            <SelectItem
+                                v-for="bank in banks"
+                                :key="bank.id"
+                                :value="bank.id"
+                            >
                                 {{ bank.name }}
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <p v-if="banksError" class="text-xs text-destructive">{{ banksError }}</p>
+                    <p v-if="banksError" class="text-xs text-destructive">
+                        {{ banksError }}
+                    </p>
                 </div>
 
                 <div class="space-y-2">
@@ -140,8 +186,12 @@ onMounted(() => {
                     <Input v-model="accountNo" placeholder="1234567890" />
                 </div>
 
-                <p v-if="errorMessage" class="text-sm text-destructive">{{ errorMessage }}</p>
-                <p v-if="successMessage" class="text-sm text-green-600">{{ successMessage }}</p>
+                <p v-if="errorMessage" class="text-sm text-destructive">
+                    {{ errorMessage }}
+                </p>
+                <p v-if="successMessage" class="text-sm text-green-600">
+                    {{ successMessage }}
+                </p>
 
                 <Button class="w-full" :disabled="submitting" @click="submit">
                     {{ submitting ? 'Submitting…' : 'Withdraw' }}

@@ -27,7 +27,10 @@ export function useAuthToken() {
      * stale token and sends the browser to the login page instead of letting
      * the page render a confusing "unauthenticated" error state.
      */
-    async function authFetch(input: string, init: RequestInit = {}): Promise<Response> {
+    async function authFetch(
+        input: string,
+        init: RequestInit = {},
+    ): Promise<Response> {
         const response = await fetch(input, {
             ...init,
             headers: { ...authHeaders(), ...(init.headers ?? {}) },
@@ -36,6 +39,7 @@ export function useAuthToken() {
         if (response.status === 401) {
             clear();
             window.location.href = '/api/login';
+
             // Never resolves — we're navigating away, so nothing downstream should try to read this response.
             return new Promise(() => {});
         }

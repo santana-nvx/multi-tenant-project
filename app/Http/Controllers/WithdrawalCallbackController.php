@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessWithdrawalCallback;
 use App\Services\WithdrawalCallbackService;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -12,11 +13,13 @@ class WithdrawalCallbackController extends Controller
 
     public function __invoke(Request $request)
     {
-        try {
-            $this->callbacks->handle($request->all());
-        } catch (RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        // try {
+        //     $this->callbacks->handle($request->all());
+        // } catch (RuntimeException $e) {
+        //     return response()->json(['message' => $e->getMessage()], 422);
+        // }
+
+        ProcessWithdrawalCallback::dispatch($request->all());
 
         return response()->json(['status' => true]);
     }

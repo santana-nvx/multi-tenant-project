@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 // Player authentication routes
 Route::post('/login', [PlayerAuthController::class, 'login']);
+Route::post('/register', [PlayerAuthController::class, 'register']);
 Route::post('/deposits/callback', DepositCallbackController::class);
 Route::post('/withdrawals/callback', WithdrawalCallbackController::class);
 
@@ -22,7 +23,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/deposits', [DepositController::class, 'store']);
     Route::get('/deposits/banks', [BankController::class, 'deposit']);
 
-    Route::post('/withdrawals', [WithdrawalController::class, 'store']);
+    Route::post('/withdrawals', [WithdrawalController::class, 'store'])->middleware('throttle:5,1');
     Route::get('/withdrawals/banks', [BankController::class, 'withdrawal']);
 
     Route::get('/wallet', [WalletController::class, 'show']);

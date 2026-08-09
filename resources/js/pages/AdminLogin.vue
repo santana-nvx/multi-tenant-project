@@ -2,8 +2,14 @@
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const email = ref('');
 const password = ref('');
@@ -11,7 +17,9 @@ const token = ref<string | null>(null);
 const loginError = ref<string | null>(null);
 const loginLoading = ref(false);
 
-const meResult = ref<{ guard: string; status: number; body: unknown } | null>(null);
+const meResult = ref<{ guard: string; status: number; body: unknown } | null>(
+    null,
+);
 const meLoading = ref(false);
 
 async function login() {
@@ -34,6 +42,7 @@ async function login() {
 
     if (!response.ok) {
         loginError.value = body.message ?? 'Login failed.';
+
         return;
     }
 
@@ -41,7 +50,9 @@ async function login() {
 }
 
 async function callMe(guard: 'api' | 'admin') {
-    if (!token.value) return;
+    if (!token.value) {
+        return;
+    }
 
     meLoading.value = true;
     meResult.value = null;
@@ -69,36 +80,69 @@ function logout() {
 <template>
     <Head title="Admin Login" />
 
-    <div class="flex min-h-screen items-center justify-center bg-[#FDFDFC] p-6 dark:bg-[#0a0a0a]">
+    <div
+        class="flex min-h-screen items-center justify-center bg-[#FDFDFC] p-6 dark:bg-[#0a0a0a]"
+    >
         <Card class="w-full max-w-sm">
             <CardHeader>
                 <CardTitle>Admin Login</CardTitle>
-                <CardDescription>Posts to <code>/admin/login</code> &mdash; uses the <code>admin</code> guard.</CardDescription>
+                <CardDescription
+                    >Posts to <code>/admin/login</code> &mdash; uses the
+                    <code>admin</code> guard.</CardDescription
+                >
             </CardHeader>
             <CardContent class="space-y-4">
                 <template v-if="!token">
                     <div class="space-y-2">
-                        <Input v-model="email" type="email" placeholder="Email" autocomplete="username" />
-                        <Input v-model="password" type="password" placeholder="Password" autocomplete="current-password" @keyup.enter="login" />
+                        <Input
+                            v-model="email"
+                            type="email"
+                            placeholder="Email"
+                            autocomplete="username"
+                        />
+                        <Input
+                            v-model="password"
+                            type="password"
+                            placeholder="Password"
+                            autocomplete="current-password"
+                            @keyup.enter="login"
+                        />
                     </div>
 
-                    <p v-if="loginError" class="text-sm text-destructive">{{ loginError }}</p>
+                    <p v-if="loginError" class="text-sm text-destructive">
+                        {{ loginError }}
+                    </p>
 
-                    <Button class="w-full" :disabled="loginLoading" @click="login">
+                    <Button
+                        class="w-full"
+                        :disabled="loginLoading"
+                        @click="login"
+                    >
                         {{ loginLoading ? 'Logging in…' : 'Log in' }}
                     </Button>
                 </template>
 
                 <template v-else>
-                    <p class="text-sm text-muted-foreground break-all">
-                        Token: <span class="font-mono">{{ token.slice(0, 24) }}…</span>
+                    <p class="text-sm break-all text-muted-foreground">
+                        Token:
+                        <span class="font-mono">{{ token.slice(0, 24) }}…</span>
                     </p>
 
                     <div class="flex gap-2">
-                        <Button class="flex-1" variant="secondary" :disabled="meLoading" @click="callMe('api')">
+                        <Button
+                            class="flex-1"
+                            variant="secondary"
+                            :disabled="meLoading"
+                            @click="callMe('api')"
+                        >
                             Call /api/me
                         </Button>
-                        <Button class="flex-1" variant="secondary" :disabled="meLoading" @click="callMe('admin')">
+                        <Button
+                            class="flex-1"
+                            variant="secondary"
+                            :disabled="meLoading"
+                            @click="callMe('admin')"
+                        >
                             Call /admin/me
                         </Button>
                     </div>
@@ -106,14 +150,24 @@ function logout() {
                     <div v-if="meResult" class="rounded-md border p-3 text-sm">
                         <p class="font-medium">
                             /{{ meResult.guard }}/me &mdash;
-                            <span :class="meResult.status === 200 ? 'text-green-600' : 'text-destructive'">
+                            <span
+                                :class="
+                                    meResult.status === 200
+                                        ? 'text-green-600'
+                                        : 'text-destructive'
+                                "
+                            >
                                 {{ meResult.status }}
                             </span>
                         </p>
-                        <pre class="mt-2 overflow-x-auto text-xs">{{ JSON.stringify(meResult.body, null, 2) }}</pre>
+                        <pre class="mt-2 overflow-x-auto text-xs">{{
+                            JSON.stringify(meResult.body, null, 2)
+                        }}</pre>
                     </div>
 
-                    <Button class="w-full" variant="outline" @click="logout">Log out</Button>
+                    <Button class="w-full" variant="outline" @click="logout"
+                        >Log out</Button
+                    >
                 </template>
             </CardContent>
         </Card>

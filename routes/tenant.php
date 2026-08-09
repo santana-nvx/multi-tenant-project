@@ -38,6 +38,7 @@ Route::middleware(['web', 'tenant'])->group(function () {
     });
 
     Route::inertia('/api/login', 'PlayerLogin');
+    Route::inertia('/api/register', 'PlayerRegister');
 
     Route::inertia('/admin/login', 'AdminLogin');
 
