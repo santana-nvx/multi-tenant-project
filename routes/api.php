@@ -17,7 +17,7 @@ Route::post('/deposits/callback', DepositCallbackController::class);
 Route::post('/withdrawals/callback', WithdrawalCallbackController::class);
 
 // auth api is used for player authentication, so we use the 'auth:api' middleware to protect the /me route. This ensures that only authenticated players can access their own information.
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api', 'role:end-user,api'])->group(function () {
     Route::get('/me', [PlayerAuthController::class, 'me']);
 
     Route::post('/deposits', [DepositController::class, 'store']);

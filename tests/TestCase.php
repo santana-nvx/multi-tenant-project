@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 use Stancl\Tenancy\Tenancy;
 
 abstract class TestCase extends BaseTestCase
@@ -26,7 +27,14 @@ abstract class TestCase extends BaseTestCase
     {
         $tenant = $this->createTenant($domain);
 
-        $user = $tenant->run(fn () => User::factory()->create($userAttributes));
+        $user = $tenant->run(function () use ($userAttributes) {
+            $user = User::factory()->create($userAttributes);
+
+            $role = Role::firstOrCreate(['name' => 'end-user', 'guard_name' => 'api']);
+            $user->assignRole($role);
+
+            return $user;
+        });
 
         return [$tenant, $user];
     }
@@ -35,7 +43,14 @@ abstract class TestCase extends BaseTestCase
     {
         $tenant = $this->createTenant($domain);
 
-        $admin = $tenant->run(fn () => Admin::factory()->create($adminAttributes));
+        $admin = $tenant->run(function () use ($adminAttributes) {
+            $admin = Admin::factory()->create($adminAttributes);
+
+            $role = Role::firstOrCreate(['name' => 'tenant-admin', 'guard_name' => 'admin']);
+            $admin->assignRole($role);
+
+            return $admin;
+        });
 
         return [$tenant, $admin];
     }

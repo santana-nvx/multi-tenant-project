@@ -2,9 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Admin;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Services\TenantCreationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -40,29 +38,22 @@ class CreateTenantCommand extends Command
         $adminEmail = $this->option('admin-email') ?? "admin@{$domain}";
         $adminPassword = $this->option('admin-password') ?? Str::random(16);
 
-        $tenant = Tenant::create();
+        $creation = new TenantCreationService;
 
-        $tenant->domains()->create(['domain' => $domain]);
-
-        [$user, $admin] = $tenant->run(function () use ($userEmail, $userPassword, $adminEmail, $adminPassword) {
-            $user = User::create([
-                'name' => $this->option('user-name'),
-                'email' => $userEmail,
-                'password' => $userPassword,
-            ]);
-
-            $admin = Admin::create([
-                'name' => $this->option('admin-name'),
-                'email' => $adminEmail,
-                'password' => $adminPassword,
-            ]);
-
-            return [$user, $admin];
-        });
+        $tenant = $creation->create(
+            domain: $domain,
+            tenantName: $domain,
+            userName: $this->option('user-name'),
+            userEmail: $userEmail,
+            userPassword: $userPassword,
+            adminName: $this->option('admin-name'),
+            adminEmail: $adminEmail,
+            adminPassword: $adminPassword,
+        );
 
         $this->info("Tenant [{$tenant->id}] created for domain [{$domain}].");
-        $this->line("Player login: {$user->email} / {$userPassword}");
-        $this->line("Admin login:  {$admin->email} / {$adminPassword}");
+        $this->line("Player login: {$userEmail} / {$userPassword}");
+        $this->line("Admin login:  {$adminEmail} / {$adminPassword}");
 
         return self::SUCCESS;
     }

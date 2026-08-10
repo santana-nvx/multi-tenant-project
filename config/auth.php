@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Admin;
+use App\Models\CentralAdmin;
 use App\Models\User;
 
 return [
@@ -49,6 +50,11 @@ return [
             'provider' => 'admins',
         ],
 
+        'central-admin' => [
+            'driver' => 'jwt',
+            'provider' => 'central_admins',
+        ],
+
         // 'web' => [
         //     'driver' => 'session',
         //     'provider' => 'users',
@@ -81,6 +87,11 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => Admin::class,
+        ],
+
+        'central_admins' => [
+            'driver' => 'eloquent',
+            'model' => CentralAdmin::class,
         ],
 
         // 'users' => [

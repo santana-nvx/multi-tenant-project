@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureTenantIsActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -7,6 +8,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
@@ -28,12 +31,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->group('tenant', [
             InitializeTenancyByDomain::class,
             InitializeTenancyByRequestData::class,
+            EnsureTenantIsActive::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => null);
 
         // ngrok required
         $middleware->trustProxies(at: [], headers: 0);
+
+        $middleware->validateCsrfTokens(except: [
+            'central-admin/*',
+        ]);
+
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

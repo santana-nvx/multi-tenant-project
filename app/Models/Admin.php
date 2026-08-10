@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
+use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 /**
@@ -25,7 +26,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class Admin extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<AdminFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasRoles, HasUlids;
 
     /**
      * @return array<string, string>
